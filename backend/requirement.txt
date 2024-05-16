@@ -3,3 +3,6 @@ numpy
 tldextract
 scikit-learn
 python-whois
+flask
+supabase
+flask_cors

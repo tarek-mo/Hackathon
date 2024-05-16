@@ -1,8 +1,12 @@
 from flask import Flask, request, jsonify, redirect, url_for, render_template
 import pickle
+from flask_cors import CORS
 
 
 app = Flask(__name__)
+
+# Use cors to allow cross origin requests
+CORS(app)
 
 @app.route('/')
 def home():
