@@ -6,3 +6,6 @@ python-whois
 flask
 supabase
 flask_cors
+python-dotenv
+wordcloud
+seaborn

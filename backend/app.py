@@ -1,12 +1,9 @@
-from flask import Flask, request, jsonify, redirect, url_for, render_template
+from flask import Flask, request, jsonify
 import pickle
 from flask_cors import CORS
-# import supabase from supabase_client.py
-from supabase_client import supabase
-
+import joblib
+from preprocess import preprocess
 app = Flask(__name__)
-
-# Use cors to allow cross origin requests
 CORS(app)
 
 @app.route('/')
@@ -19,10 +16,22 @@ def predict():
     with open('phishing_model.pkl', 'rb') as f:
         pipeline = pickle.load(f)
     prediction = pipeline.predict([url])
-    obj = supabase.table('history').insert({"user_id": request.json["userId"], "type": request.json["type"], "status": prediction[0]}).execute()
-    print("hellooo")
-    print(obj)
     return jsonify({'prediction': prediction[0]})
-#modify port 
+
+@app.route('/predict_email', methods=['POST'])
+def predict_email():
+    email_text = request.json['email_text']
+    model = joblib.load('output/phishing_model.joblib')
+    feature = joblib.load('output/phishing_feature.joblib')
+    email_text = feature.transform([email_text])
+    prediction = model.predict(email_text)
+    print("voila");
+    print(prediction[0])
+    if prediction[0] == 0:
+        return jsonify({'prediction': 'Phihsing'})
+    else:
+        return jsonify({'prediction': 'Not Phishing'})
+    
+
 if __name__ == '__main__':
     app.run(port=8000)
