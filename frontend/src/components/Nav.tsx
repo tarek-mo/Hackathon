@@ -6,6 +6,7 @@ import Authentication from "./login";
 import { createClient } from "@/utils/supabase/server";
 import Logout from "./logout";
 import Image from "next/image";
+import Link from "next/link";
 
 const Nav = async () => {
   const supabase = createClient(cookies());
@@ -16,7 +17,9 @@ const Nav = async () => {
 
   return (
     <nav className="flex items-center justify-between container py-3">
-      <h2>PhishGuard</h2>
+      <h2 className="text-2xl">
+        <Link href={"/"}>PhishGuard</Link>
+      </h2>
       <div className="flex items-center gap-3">
         {user ? (
           <div className="flex items-center gap-2">

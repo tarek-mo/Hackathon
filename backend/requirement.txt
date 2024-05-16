@@ -6,3 +6,4 @@ python-whois
 flask
 supabase
 flask_cors
+python-dotenv

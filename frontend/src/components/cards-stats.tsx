@@ -7,8 +7,18 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  getDetectionRate,
+  getTotalEmailsChecked,
+  getTotalUrlsChecked,
+} from "@/actions/statsActions";
 
-const CardsStats = () => {
+const CardsStats = async () => {
+  const [totalUrls, totalEmails, detectionRate] = await Promise.all([
+    getTotalUrlsChecked(),
+    getTotalEmailsChecked(),
+    getDetectionRate(),
+  ]);
   return (
     <section className="container flex gap-3 flex-wrap justify-center my-4">
       <Card className="flex flex-col justify-between">
@@ -16,7 +26,7 @@ const CardsStats = () => {
           <CardTitle>Total URLS Checked</CardTitle>
         </CardHeader>
         <CardContent>
-          <p>3814</p>
+          <p>{totalUrls}</p>
         </CardContent>
       </Card>
       <Card className="flex flex-col justify-between">
@@ -24,7 +34,7 @@ const CardsStats = () => {
           <CardTitle>Total Emails Checked</CardTitle>
         </CardHeader>
         <CardContent>
-          <p>1823</p>
+          <p>{totalEmails}</p>
         </CardContent>
       </Card>
       <Card className="flex flex-col justify-between">
@@ -35,7 +45,7 @@ const CardsStats = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <p>28%</p>
+          <p>{detectionRate}</p>
         </CardContent>
       </Card>
     </section>

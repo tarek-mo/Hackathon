@@ -10,8 +10,10 @@ import {
 } from "@/components/ui/table";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { getHistory } from "@/actions/historyActions";
 
-const RecentlyCheckedTable = () => {
+const RecentlyCheckedTable = async () => {
+  const { formattedData } = await getHistory({});
   return (
     <section className="my-10">
       <h2 className="text-2xl my-2">Recently Checked</h2>
@@ -19,7 +21,7 @@ const RecentlyCheckedTable = () => {
         <TableCaption className="">
           <Link
             className="flex items-center justify-center gap-3"
-            href={"/stats"}
+            href={"/history"}
           >
             View All <ArrowRight size={18} />
           </Link>
@@ -33,36 +35,20 @@ const RecentlyCheckedTable = () => {
           </TableRow>
         </TableHeader>
         <TableBody>
-          <TableRow>
-            <TableCell>http://565bet.com/</TableCell>
-            <TableCell>Website</TableCell>
-            <TableCell className="font-medium">BAD</TableCell>
-            <TableCell>5 minutes ago</TableCell>
-          </TableRow>
-          <TableRow>
-            <TableCell>itistarek@gmail.com</TableCell>
-            <TableCell>Email</TableCell>
-            <TableCell className="font-medium">BAD</TableCell>
-            <TableCell>an hour ago</TableCell>
-          </TableRow>
-          <TableRow>
-            <TableCell>https://plenasupport.pages.dev/dapps</TableCell>
-            <TableCell>Website</TableCell>
-            <TableCell className="font-medium">BAD</TableCell>
-            <TableCell>a day ago</TableCell>
-          </TableRow>
-          <TableRow>
-            <TableCell>mohammelachhab@gmail.com</TableCell>
-            <TableCell>Email</TableCell>
-            <TableCell className="font-medium">GOOD</TableCell>
-            <TableCell>an hour ago</TableCell>
-          </TableRow>
-          <TableRow>
-            <TableCell>itistarek@gmail.com</TableCell>
-            <TableCell>Email</TableCell>
-            <TableCell className="font-medium">BAD</TableCell>
-            <TableCell>an hour ago</TableCell>
-          </TableRow>
+          {formattedData.map((record) => (
+            <TableRow key={record.id}>
+              <TableCell>{record.ressource}</TableCell>
+              <TableCell className="capitalize">{record.type}</TableCell>
+              <TableCell
+                className={`font-medium capitalize ${
+                  record.status === "good" ? "text-green-500" : "text-red-500"
+                }`}
+              >
+                {record.status === "good" ? "safe" : "unsafe"}
+              </TableCell>
+              <TableCell>{record.created_at}</TableCell>
+            </TableRow>
+          ))}
         </TableBody>
       </Table>
     </section>

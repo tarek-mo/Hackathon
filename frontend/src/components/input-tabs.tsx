@@ -1,5 +1,5 @@
 "use client";
-import { FormEvent, useState } from "react";
+import { useState } from "react";
 import axios from "@/axios";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,8 +14,6 @@ const InputTabs = ({ userId }: { userId: string | undefined }) => {
   const [error, setError] = useState("");
   const [url, setUrl] = useState("");
   const handleUrlSubmit = async () => {
-    console.log("inside the function");
-
     try {
       setLoading(true);
       setError("");
@@ -24,12 +22,9 @@ const InputTabs = ({ userId }: { userId: string | undefined }) => {
       const response = await axios.post("/predict", {
         url,
         userId,
-        type: "Website",
+        type: "website",
       });
 
-      console.log("reached here");
-
-      console.log(response.data);
       setResult(response.data.prediction);
     } catch (error) {
       console.log("error", error);
@@ -66,7 +61,7 @@ const InputTabs = ({ userId }: { userId: string | undefined }) => {
             </Button>
           </CardContent>
           <div className="p-6">
-            {result === "bad" ? (
+            {result === "bad" && (
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>Danger</AlertTitle>
@@ -75,7 +70,8 @@ const InputTabs = ({ userId }: { userId: string | undefined }) => {
                   not to use it.{" "}
                 </AlertDescription>
               </Alert>
-            ) : (
+            )}
+            {result === "good" && (
               <Alert className="border-green-500">
                 <Check color="green" className="h-4 w-4 text-green-500" />
                 <AlertTitle>Safe</AlertTitle>
