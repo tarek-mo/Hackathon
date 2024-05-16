@@ -6,4 +6,10 @@ python-whois
 flask
 supabase
 flask_cors
+<<<<<<< HEAD
 python-dotenv
+=======
+python-dotenv
+wordcloud
+seaborn
+>>>>>>> origin/nlp-check
