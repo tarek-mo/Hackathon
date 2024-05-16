@@ -2,9 +2,11 @@ from flask import Flask, request, jsonify
 import pickle
 from flask_cors import CORS
 import joblib
-from preprocess import preprocessfrom dateutil.parser import parse
+from preprocess import preprocess
+from dateutil.parser import parse
 from dateutil.relativedelta import relativedelta
 from datetime import datetime
+from supabase_client import supabase
 
 
 app = Flask(__name__)
