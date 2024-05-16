@@ -19,16 +19,17 @@ const Authentication = () => {
         </DialogTrigger>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Are you absolutely sure?</DialogTitle>
+            <DialogTitle className="mb-3">Login</DialogTitle>
             <DialogDescription>
-              <Image
-                src="/images/google-logo.png"
-                alt="Google Logo"
-                width={100} // Specify the actual width of the image
-                height={100} //
-              />
-              This action cannot be undone. This will permanently delete your
-              account and remove your data from our servers.
+              <Button className="flex items-center gap-3 w-full">
+                <Image
+                  src="/images/google-logo.png"
+                  alt="Google Logo"
+                  width={25} // Specify the actual width of the image
+                  height={25} //
+                />
+                Login with Google
+              </Button>
             </DialogDescription>
           </DialogHeader>
         </DialogContent>
@@ -39,10 +40,17 @@ const Authentication = () => {
         </DialogTrigger>{" "}
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Are you sure?</DialogTitle>
+            <DialogTitle className="mb-3">Signup</DialogTitle>
             <DialogDescription>
-              This action cannot be undone. This will permanently delete your
-              account and remove your data from our servers.
+              <Button className="flex items-center gap-3 w-full">
+                <Image
+                  src="/images/google-logo.png"
+                  alt="Google Logo"
+                  width={25} // Specify the actual width of the image
+                  height={25} //
+                />
+                Signup with Google
+              </Button>
             </DialogDescription>
           </DialogHeader>
         </DialogContent>
