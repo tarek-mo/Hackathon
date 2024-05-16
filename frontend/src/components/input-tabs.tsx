@@ -10,9 +10,13 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, Check } from "lucide-react";
 const InputTabs = ({ userId }: { userId: string | undefined }) => {
   const [result, setResult] = useState("");
+  const [emailResult, setEmailResult] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [emailLoading, setEmailLoading] = useState(false);
   const [url, setUrl] = useState("");
+  const [email, setEmail] = useState("");
+  const [error, setError] = useState("");
+  const [emailError, setEmailError] = useState("");
   const handleUrlSubmit = async () => {
     try {
       setLoading(true);
@@ -33,11 +37,32 @@ const InputTabs = ({ userId }: { userId: string | undefined }) => {
       setLoading(false);
     }
   };
+  const handleEmailSubmit = async () => {
+    try {
+      setEmailLoading(true);
+      setEmailError("");
+      setEmailResult("");
+
+      const response = await axios.post("/predict_email", {
+        email_text: email,
+        userId,
+        type: "email",
+      });
+      console.log(response);
+
+      setEmailResult(response.data.prediction);
+    } catch (error) {
+      console.log("error", error);
+      setError("An error occurred. Please try again later.");
+    } finally {
+      setEmailLoading(false);
+    }
+  };
   return (
     <Tabs defaultValue="url" className="w-[800px] mx-auto">
       <TabsList className="grid w-full grid-cols-2">
         <TabsTrigger value="url">URL Checker</TabsTrigger>
-        <TabsTrigger value="email">Email Checker</TabsTrigger>
+        <TabsTrigger value="email">Email Body Checker</TabsTrigger>
       </TabsList>
       <TabsContent value="url">
         <Card>
@@ -86,20 +111,45 @@ const InputTabs = ({ userId }: { userId: string | undefined }) => {
       <TabsContent value="email">
         <Card>
           <CardHeader>
-            <CardTitle>Email</CardTitle>
+            <CardTitle>Email Body Checker</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 w-full flex items-end gap-3">
             <div className="space-y-1 grow">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">Email Body Text</Label>
               <Input
                 className="w-full"
-                name="email"
                 id="email"
-                placeholder="teest@gmail.com"
+                name="email"
+                placeholder="Congratulations you won the cash prize"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
               />
             </div>
-            <Button>Check</Button>
+            <Button onClick={handleEmailSubmit} disabled={emailLoading}>
+              Check
+            </Button>
           </CardContent>
+          <div className="p-6">
+            {emailResult === "Phihsing" && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Danger</AlertTitle>
+                <AlertDescription>
+                  This email is likely to be phishing. It&apos;s recommended not
+                  to interact with it.
+                </AlertDescription>
+              </Alert>
+            )}
+            {emailResult === "Not Phishing" && (
+              <Alert className="border-green-500">
+                <Check color="green" className="h-4 w-4 text-green-500" />
+                <AlertTitle>Safe</AlertTitle>
+                <AlertDescription>
+                  This email seems safe to interact with.
+                </AlertDescription>
+              </Alert>
+            )}
+          </div>
         </Card>
       </TabsContent>
     </Tabs>
