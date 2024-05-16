@@ -6,8 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
-const InputTabs = () => {
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle, Check } from "lucide-react";
+const InputTabs = ({ userId }: { userId: string | undefined }) => {
   const [result, setResult] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -22,6 +23,8 @@ const InputTabs = () => {
 
       const response = await axios.post("/predict", {
         url,
+        userId,
+        type: "Website",
       });
 
       console.log("reached here");
@@ -30,6 +33,7 @@ const InputTabs = () => {
       setResult(response.data.prediction);
     } catch (error) {
       console.log("error", error);
+      setError("An error occurred. Please try again later.");
     } finally {
       setLoading(false);
     }
@@ -60,16 +64,27 @@ const InputTabs = () => {
             <Button onClick={handleUrlSubmit} disabled={loading}>
               Check
             </Button>
-            {result && (
-              <p
-                className={`capitalize ${
-                  result === "good" ? "text-green-500" : "text-red-500"
-                }`}
-              >
-                {result}
-              </p>
-            )}
           </CardContent>
+          <div className="p-6">
+            {result === "bad" ? (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Danger</AlertTitle>
+                <AlertDescription>
+                  This website is likely to be phishing. It&apos;s recommended
+                  not to use it.{" "}
+                </AlertDescription>
+              </Alert>
+            ) : (
+              <Alert className="border-green-500">
+                <Check color="green" className="h-4 w-4 text-green-500" />
+                <AlertTitle>Safe</AlertTitle>
+                <AlertDescription>
+                  This website seems safe to use.{" "}
+                </AlertDescription>
+              </Alert>
+            )}
+          </div>
         </Card>
       </TabsContent>
       <TabsContent value="email">
