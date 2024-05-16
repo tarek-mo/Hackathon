@@ -32,8 +32,8 @@ def predict_email():
     feature = joblib.load('output/phishing_feature.joblib')
     email_text = feature.transform([email_text])
     prediction = model.predict(email_text)
-    print("voila");
-    print(prediction[0])
+    obj = supabase.table('history').insert({"user_id": request.json.get('userId', None), "ressource": request.json['email_text'] ,"type": request.json["type"], "status": "bad" if prediction[0]==0 else "good"}).execute()
+
     if prediction[0] == 0:
         return jsonify({'prediction': 'Phihsing'})
     else:
