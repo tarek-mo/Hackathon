@@ -8,6 +8,10 @@ from google_auth_oauthlib.flow import Flow
 import googleapiclient.errors
 import os
 import base64
+from apscheduler.schedulers.background import BackgroundScheduler
+import datetime
+import supabase
+
 
 app = Flask(__name__)
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
@@ -47,10 +51,12 @@ def authorize():
         redirect_uri=REDIRECT_URI
     )
     auth_url, _ = flow.authorization_url(prompt='consent')
+    
     return redirect(auth_url)
 
 @app.route('/oauth2callback')
 def oauth2callback():
+    print('oauth2callback')
     flow = Flow.from_client_secrets_file(
         CLIENT_SECRETS_FILE,
         scopes=SCOPES,
@@ -59,19 +65,10 @@ def oauth2callback():
     flow.fetch_token(authorization_response=request.url)
     credentials = flow.credentials
     session['credentials'] = credentials_to_dict(credentials)
-    return redirect('/inbox')
+    if 'credentials' in session:
+        return redirect(f'http://localhost:3000/dashboard')
+    return redirect(f'http://localhost:3000')
 
-@app.route('/inbox', methods=['GET'])
-def inbox():
-    credentials = Credentials(**session['credentials'])
-    service = build('gmail', 'v1', credentials=credentials)
-    results = service.users().messages().list(userId='me', labelIds=['INBOX']).execute()
-    messages = results.get('messages', [])
-    emails = []
-    if not messages:
-        return jsonify({'emails': emails})
-    
-    return jsonify({'emails': emails})
 
 
 @app.route('/check-credentials', methods=['GET'])
@@ -116,6 +113,26 @@ def inboxes():
     return jsonify({'emails': emails})
 
 
+@app.route('/predict-inbox', methods=['GET'])
+def predict_inbox():
+    if 'credentials' not in session:
+        return redirect('/authorize')
+    #prediction for last mail
+    credentials = Credentials(**session['credentials'])
+    service = build('gmail', 'v1', credentials=credentials)
+    results = service.users().messages().list(userId='me', labelIds=['INBOX']).execute()
+    messages = results.get('messages', [])
+    if not messages:
+        return jsonify({'prediction': 'No emails in inbox'})
+    msg = service.users().messages().get(userId='me', id=messages[0]['id']).execute()
+    email_text = msg['snippet']
+    model = joblib.load('output/phishing_model.joblib')
+    feature = joblib.load('output/phishing_feature.joblib')
+    email_text = feature.transform([email_text])
+    prediction = model.predict(email_text)
+
+    return jsonify({'prediction': 'Phishing' if prediction[0] == 0 else 'Not Phishing'})
+
 @app.route('/phishing_inbox', methods=['GET'])
 def phishing_inbox():
     credentials = Credentials(**session['credentials'])
@@ -146,6 +163,27 @@ def extract_email_body(message):
         email_body = base64.urlsafe_b64decode(message['payload']['parts'][0]['body']['data']).decode('utf-8')
     return email_body
 
+def fetch_and_store_email():
+    if 'credentials' not in session:
+        return
+
+    credentials = Credentials(**session['credentials'])
+    service = build('gmail', 'v1', credentials=credentials)
+    results = service.users().messages().list(userId='me', labelIds=['INBOX']).execute()
+    messages = results.get('messages', [])
+
+    if not messages:
+        return
+    
+    prediction = predict_email(messages)
+    #sauvgarder dans la base de données using supabase
+    db = supabase.create_client()
+    for email in prediction:
+        db.insert('emails', email)
+    
+
+
+    print(f"Fetched and stored {len(messages)} emails at {datetime.datetime.now()}")
 
 
 def detect_phishing(emails):
@@ -171,6 +209,9 @@ def credentials_to_dict(credentials):
         'client_secret': credentials.client_secret,
         'scopes': credentials.scopes
     }
+
+
+
 
 if __name__ == '__main__':
     app.run(port=8000)
