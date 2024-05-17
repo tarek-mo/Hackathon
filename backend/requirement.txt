@@ -9,3 +9,7 @@ flask_cors
 python-dotenv
 wordcloud
 seaborn
+google-auth-oauthlib
+google-auth
+google-api-python-client
+google
