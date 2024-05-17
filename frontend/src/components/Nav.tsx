@@ -7,6 +7,7 @@ import { createClient } from "@/utils/supabase/server";
 import Logout from "./logout";
 import Image from "next/image";
 import Link from "next/link";
+import { Button } from "./ui/button";
 
 const Nav = async () => {
   const supabase = createClient(cookies());
@@ -30,7 +31,16 @@ const Nav = async () => {
               className="rounded-full"
               alt="Avatar"
             />
-            <p>{user?.user_metadata.full_name}</p>
+            <p className="text-sm text-muted-foreground">
+              {user?.user_metadata.full_name}
+            </p>
+            <Button
+              className="underline cursor-pointer"
+              asChild
+              variant={"ghost"}
+            >
+              <Link href={"/dashboard"}>Dashboard</Link>
+            </Button>
             <Logout />
           </div>
         ) : (

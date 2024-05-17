@@ -24,7 +24,7 @@ const Page = async ({ searchParams }: { searchParams: { page?: number } }) => {
   const { page } = searchParams;
 
   const { formattedData, isNext } = await getHistory({
-    size: 4,
+    size: 10,
     pageNumber: page,
   });
 

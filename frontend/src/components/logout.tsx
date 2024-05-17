@@ -11,7 +11,11 @@ const Logout = () => {
     await supabase.auth.signOut({});
     router.refresh();
   };
-  return <Button onClick={handleLogout}>Logout</Button>;
+  return (
+    <Button variant={"secondary"} onClick={handleLogout}>
+      Logout
+    </Button>
+  );
 };
 
 export default Logout;
