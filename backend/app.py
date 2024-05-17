@@ -86,9 +86,17 @@ def inbox():
     service = build('gmail', 'v1', credentials=credentials)
     results = service.users().messages().list(userId='me', labelIds=['INBOX']).execute()
     messages = results.get('messages', [])
-    emails = []
+    #retunr the last message
     if not messages:
-        return jsonify({'emails': emails})
+        return jsonify({'emails': []})
+    msg = service.users().messages().get(userId='me', id=messages[0]['id']).execute()
+    email = {
+        'id': msg['id'],
+        'snippet': msg['snippet']
+    }
+    return jsonify({'emails': [email]})
+    
+
 
     return jsonify({'emails': emails})
 
@@ -130,6 +138,7 @@ def predict_inbox():
     feature = joblib.load('output/phishing_feature.joblib')
     email_text = feature.transform([email_text])
     prediction = model.predict(email_text)
+    
 
     return jsonify({'prediction': 'Phishing' if prediction[0] == 0 else 'Not Phishing'})
 
@@ -164,40 +173,34 @@ def extract_email_body(message):
     return email_body
 
 def fetch_and_store_email():
-    if 'credentials' not in session:
-        return
-
     credentials = Credentials(**session['credentials'])
     service = build('gmail', 'v1', credentials=credentials)
     results = service.users().messages().list(userId='me', labelIds=['INBOX']).execute()
     messages = results.get('messages', [])
-
+    emails = []
     if not messages:
-        return
-    
-    prediction = predict_email(messages)
-    #sauvgarder dans la base de données using supabase
-    db = supabase.create_client()
-    for email in prediction:
-        db.insert('emails', email)
-    
-
-
-    print(f"Fetched and stored {len(messages)} emails at {datetime.datetime.now()}")
+        return emails
+    for message in messages[:10]:
+        msg = service.users().messages().get(userId='me', id=message['id']).execute()
+        email = {
+            'id': msg['id'],
+            'snippet': msg['snippet'],
+            'body': extract_email_body(msg),
+        }
+        emails.append(email)
+    return emails
 
 
 def detect_phishing(emails):
     phishing_emails = []
-    model = joblib.load('output/phishing_model.joblib')
-    feature = joblib.load('output/phishing_feature.joblib')
-    
     for email in emails:
         email_text = email['snippet']
+        model = joblib.load('output/phishing_model.joblib')
+        feature = joblib.load('output/phishing_feature.joblib')
         email_text = feature.transform([email_text])
         prediction = model.predict(email_text)
         if prediction[0] == 0:
             phishing_emails.append(email)
-    
     return phishing_emails
 
 def credentials_to_dict(credentials):

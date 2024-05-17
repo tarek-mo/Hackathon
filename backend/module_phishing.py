@@ -74,4 +74,7 @@ def train_phishing_model(data_path):
     accuracy = accuracy_score(y_test, y_pred)
     report = classification_report(y_test, y_pred)
 
+
+    #draw graph
+
     return rf_model, accuracy, report

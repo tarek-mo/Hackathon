@@ -6,6 +6,7 @@ import Authentication from "./login";
 import { createClient } from "@/utils/supabase/server";
 import Logout from "./logout";
 import Image from "next/image";
+import Link from "next/link";
 
 const Nav = async () => {
   const supabase = createClient(cookies());
@@ -28,6 +29,7 @@ const Nav = async () => {
               alt="Avatar"
             />
             <p>{user?.user_metadata.full_name}</p>
+          <Link href={"/dashboard"}><p>Dashboard</p></Link>
             <Logout />
           </div>
         ) : (
