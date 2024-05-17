@@ -48,7 +48,7 @@ const InputTabs = ({ userId }: { userId: string | undefined }) => {
         userId,
         type: "email",
       });
-      console.log(response);
+      console.log("email response", response);
 
       setEmailResult(response.data.prediction);
     } catch (error) {

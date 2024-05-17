@@ -30,6 +30,7 @@ def predict():
         pipeline = pickle.load(f)
     prediction = pipeline.predict([url])
     data, count = supabase.table('history').insert({"user_id": request.json.get('userId', None), "ressource": request.json['url'] ,"type": request.json["type"], "status": prediction[0]}).execute()
+    print(data, count)
     return jsonify({'prediction': prediction[0]})
 
 @app.route('/predict_email', methods=['POST'])
@@ -40,7 +41,7 @@ def predict_email():
     email_text = feature.transform([email_text])
     prediction = model.predict(email_text)
     obj = supabase.table('history').insert({"user_id": request.json.get('userId', None), "ressource": request.json['email_text'] ,"type": request.json["type"], "status": "bad" if prediction[0]==0 else "good"}).execute()
-
+    print(obj)
     return jsonify({'prediction': 'Phishing' if prediction[0] == 0 else 'Not Phishing'})
 
 @app.route('/authorize')
@@ -70,16 +71,34 @@ def oauth2callback():
 
 @app.route('/inbox', methods=['GET'])
 def inbox():
+#get last email
+    if 'credentials' not in session:
+        return redirect('/authorize')
     credentials = Credentials(**session['credentials'])
     service = build('gmail', 'v1', credentials=credentials)
     results = service.users().messages().list(userId='me', labelIds=['INBOX']).execute()
     messages = results.get('messages', [])
-    emails = []
     if not messages:
-        return jsonify({'emails': emails})
+        return jsonify({'emails': []})
+    msg = service.users().messages().get(userId='me', id=messages[0]['id']).execute()
+    #excute prediction
+    email_text = msg['snippet']
+    model = joblib.load('output/phishing_model.joblib')
+    feature = joblib.load('output/phishing_feature.joblib')
+    email_text = feature.transform([email_text])
+    prediction = model.predict(email_text)
+    email = {
+        'id': msg['id'],
+        'email': msg['snippet'],
+        #email sender,
+        'phishing': prediction[0]
+    }
+    data, count = supabase.table('emails').insert([{
+        'email': msg['snippet'],
+        'phishing': prediction[0]
+    }]).execute();
     
-    return jsonify({'emails': emails})
-
+    return jsonify({'email': email})
 
 @app.route('/check-credentials', methods=['GET'])
 def check_credentials():
