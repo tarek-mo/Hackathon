@@ -10,6 +10,7 @@ import os
 import base64
 
 app = Flask(__name__)
+os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 CORS(app)
 app.secret_key = "enset2024"
 
@@ -62,45 +63,90 @@ def oauth2callback():
 
 @app.route('/inbox', methods=['GET'])
 def inbox():
+    credentials = Credentials(**session['credentials'])
+    service = build('gmail', 'v1', credentials=credentials)
+    results = service.users().messages().list(userId='me', labelIds=['INBOX']).execute()
+    messages = results.get('messages', [])
+    emails = []
+    if not messages:
+        return jsonify({'emails': emails})
+    
+    return jsonify({'emails': emails})
+
+
+@app.route('/check-credentials', methods=['GET'])
+def check_credentials():
+    if 'credentials' in session:
+        return jsonify({'status': 'authorized'})
+    return jsonify({'status': 'unauthorized'})
+
+@app.route('/inbox', methods=['GET'])
+def inbox():
     if 'credentials' not in session:
         return redirect('/authorize')
-    
+
     credentials = Credentials(**session['credentials'])
-    gmail = build('gmail', 'v1', credentials=credentials)
-    
-    try:
-        messages = gmail.users().messages().list(userId='me', q='is:unread').execute()
-    except googleapiclient.errors.HttpError as error:
-        return jsonify({'error': str(error)}), 500
-    
-    message_list = messages.get('messages', [])
-    
-    if not message_list:
-        return jsonify({'message': 'No unread emails found.'}), 200
-    
-    latest_message_id = message_list[0]['id']
-    
-    try:
-        latest_message = gmail.users().messages().get(userId='me', id=latest_message_id).execute()
-    except googleapiclient.errors.HttpError as error:
-        return jsonify({'error': str(error)}), 500
-    
-    email_body = extract_email_body(latest_message)
-    
-    return jsonify({'latest_unread_email': email_body})
+    service = build('gmail', 'v1', credentials=credentials)
+    results = service.users().messages().list(userId='me', labelIds=['INBOX']).execute()
+    messages = results.get('messages', [])
+    emails = []
+    if not messages:
+        return jsonify({'emails': emails})
+
+    return jsonify({'emails': emails})
+
+@app.route('/inboxes', methods=['GET'])
+def inboxes():
+    if 'credentials' not in session:
+        return redirect('/authorize')
+    emails = []
+    credentials = Credentials(**session['credentials'])
+    service = build('gmail', 'v1', credentials=credentials)
+    results = service.users().messages().list(userId='me', labelIds=['INBOX']).execute()
+    messages = results.get('messages', [])
+    if not messages:
+        return jsonify({'emails': emails})
+    for message in messages[:10]:
+        msg = service.users().messages().get(userId='me', id=message['id']).execute()
+        email = {
+            'id': msg['id'],
+            'snippet': msg['snippet']
+        }
+        emails.append(email)
+    return jsonify({'emails': emails})
+
+
+@app.route('/phishing_inbox', methods=['GET'])
+def phishing_inbox():
+    credentials = Credentials(**session['credentials'])
+    service = build('gmail', 'v1', credentials=credentials)
+    results = service.users().messages().list(userId='me', labelIds=['INBOX']).execute()
+    messages = results.get('messages', [])
+    emails = []
+    if not messages:
+        return jsonify({'emails': emails})
+    for message in messages[:10]:
+        msg = service.users().messages().get(userId='me', id=message['id']).execute()
+        email = {
+            'id': msg['id'],
+            'snippet': msg['snippet'],
+            'body': extract_email_body(msg),
+        
+        }
+        emails.append(email)
+    phishing_emails = detect_phishing(emails)
+    return jsonify({'emails': phishing_emails})
 
 def extract_email_body(message):
-    if 'data' in message['payload']['body'] and message['payload']['body']['data']:
-        return base64.urlsafe_b64decode(message['payload']['body']['data']).decode('utf-8')
+    #ignore les images
+    email_body = ''
+    if 'data' in message['payload']['body']:
+        email_body = base64.urlsafe_b64decode(message['payload']['body']['data']).decode('utf-8')
+    elif 'data' in message['payload']['parts'][0]['body']:
+        email_body = base64.urlsafe_b64decode(message['payload']['parts'][0]['body']['data']).decode('utf-8')
+    return email_body
 
-    parts = message['payload'].get('parts', [])
-    for part in parts:
-        if part['mimeType'] == 'text/plain' and 'data' in part['body']:
-            return base64.urlsafe_b64decode(part['body']['data']).decode('utf-8')
-        elif part['mimeType'] == 'text/html' and 'data' in part['body']:
-            return base64.urlsafe_b64decode(part['body']['data']).decode('utf-8')
-    
-    return "No readable body found."
+
 
 def detect_phishing(emails):
     phishing_emails = []
