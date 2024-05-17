@@ -55,6 +55,8 @@ def authorize():
 
 @app.route('/oauth2callback')
 def oauth2callback():
+    print("inside oauth2callback")
+    print(request.url)
     flow = Flow.from_client_secrets_file(
         CLIENT_SECRETS_FILE,
         scopes=SCOPES,
@@ -62,6 +64,7 @@ def oauth2callback():
     )
     flow.fetch_token(authorization_response=request.url)
     credentials = flow.credentials
+    print(credentials_to_dict(credentials))
     session['credentials'] = credentials_to_dict(credentials)
     return redirect(f'http://localhost:3000/dashboard')
 
@@ -80,11 +83,24 @@ def inbox():
 
 @app.route('/check-credentials', methods=['GET'])
 def check_credentials():
+    print("inside check-credentials")
+    print(session)
     if 'credentials' in session:
         return jsonify({'status': 'authorized'})
     return jsonify({'status': 'unauthorized'})
 
 
+@app.route('/store-credentials', methods=['POST'])
+def store_credentials():
+    credentials = request.get_json()
+    print("credentials")
+    print(credentials)
+    if credentials:
+        # Store the credentials in the session or database
+        session['credentials'] = credentials
+        return jsonify({'message': 'Credentials stored successfully'})
+    else:
+        return jsonify({'error': 'Invalid credentials'}), 400
 
 @app.route('/inboxes', methods=['GET'])
 def inboxes():
